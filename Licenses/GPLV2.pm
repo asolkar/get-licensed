@@ -1,3 +1,10 @@
+package Licenses::GPLV2;
+
+sub new {
+  return bless {
+    'name' => 'gpl_v3',
+    'pretty_name' => 'GPL v3',
+    'header' => qq {
 ###DESCRIPTION###
 Copyright (C) ###DATE### ###NAME###
 
@@ -13,3 +20,12 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    }
+  }, shift;
+}
+
+sub get_license_stub {
+  my ($self) = @_;
+}
+
+1;
