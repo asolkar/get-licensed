@@ -55,6 +55,8 @@ print "Stub:\n-----\n"
       . $app->{'licenses'}->{$app->{'options'}->{'license'}}->{'header_stub'}
       . "\n-----\n";
 
+# print Data::Dumper->Dump([$app]);
+
 find (sub {
     find_files($app, ${File::Find::name}, $_)
   }, $app->{'options'}->{'directory'});
@@ -68,6 +70,8 @@ sub find_files {
   #
   # Opportunity to filter any file types befrore any processing starts
   #
+  return if ($file =~ /\.git\b/);
+
   handle_files ($app, $file, $name);
 }
 
@@ -108,16 +112,20 @@ sub setup_filetype_comment_mapping {
   my ($app) = @_;
 
   $app->{'filetype_comments'} = {
-    '.pl'       => '#',
-    '.rb'       => '#',
-    '.erb'      => ['<!--', '-->'],
-    '.html'     => ['<!--', '-->'],
-    '.css'      => ['/*', '*/'],
-    '.coffee'   => '#',
-    '.js'       => '//',
-    '.scss'     => '//',
-    '.v'        => '//',
-    '.sv'       => '//',
-    '.vr'       => '//'
+    '.pl'         => '#',
+    '.pm'         => '#',
+    '.rb'         => '#',
+    '.erb'        => ['<!--', '-->'],
+    '.html'       => ['<!--', '-->'],
+    '.css'        => ['/*', '*/'],
+    '.coffee'     => '#',
+    '.js'         => '//',
+    '.scss'       => '//',
+    '.v'          => '//',
+    '.sv'         => '//',
+    '.vr'         => '//',
+    '.gitignore'  => '#',
+    '.gitkeep'    => '#'
+
   };
 }
