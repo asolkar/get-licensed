@@ -104,7 +104,7 @@ sub handle_files {
     }
 
     if ($app->{'options'}->{'dry'} == 0) {
-      copy($name, $name . ".licensor_backup") or die "Could not create backup file";
+      copy($name, $name . ".get_licensed_backup") or die "Could not create backup file";
 
       my $wh = FileHandle->new($name, O_WRONLY);
       print $wh @contents;
