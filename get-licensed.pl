@@ -6,11 +6,12 @@ use FindBin;
 use lib "$FindBin::Bin";
 use File::Find;
 use File::Basename;
+use File::Copy;
 use FileHandle;
+use File::Glob ':globally';
 use Data::Dumper;
 use Getopt::Long;
 use Cwd;
-use File::Glob ':globally';
 use Licenses;
 
 # Application configuration and state storage
@@ -22,6 +23,8 @@ $app->{'options'}->{'license'}    = 'mit';
 $app->{'options'}->{'user'}       = $ENV{'USER'};
 $app->{'options'}->{'date'}       = (localtime(time))[5] + 1900;
 $app->{'options'}->{'about'}      = "This is an open-source software";
+$app->{'options'}->{'dry'}        = 0;
+
 $app->{'state'}->{'license_stub'} = "NON EXISTANT";
 $app->{'state'}->{'app_dir'}      = dirname($0);
 
@@ -32,6 +35,7 @@ my $correct_usage = GetOptions (
     'about=s' => \$app->{'options'}->{'about'},
     'user=s' => \$app->{'options'}->{'user'},
     'date=s' => \$app->{'options'}->{'date'},
+    'dry' => \$app->{'options'}->{'dry'},
   );
 
 setup_licenses($app);
@@ -83,18 +87,55 @@ sub handle_files {
   my($filename, $directories, $suffix) = fileparse($file, qr/\.[^.]*/);
 
   if (exists $app->{'filetype_comments'}->{$suffix}) {
-    my $rh = new FileHandle ($name);
+    my $rh = FileHandle->new($name);
     my @contents = <$rh>;
 
-    print "Handling... $filename - $directories - $suffix\n";
+    print "Handling... $filename - $directories - $suffix ----- " .
+          ref($app->{'filetype_comments'}->{$suffix}) . "\n";
+
+    my $stub = get_license_stub($app, $suffix);
 
     if ((defined $contents[0]) && ($contents[0] =~ /^\s*#!/)) {
       print "   ... has #! line\n";
+
+      $contents[0] =  $contents[0] . "\n" . $stub . "\n";
+    } else {
+      $contents[0] =  $stub . "\n" . $contents[0] . "\n";
+    }
+
+    if ($app->{'options'}->{'dry'} == 0) {
+      copy($name, $name . ".licensor_backup") or die "Could not create backup file";
+
+      my $wh = FileHandle->new($name, O_WRONLY);
+      print $wh @contents;
     }
   }
   else {
     print "[ALERT] Don't know how to comment in file with '$suffix' extension\n";
   }
+}
+
+sub get_license_stub {
+  my ($app, $suffix) = @_;
+
+  my $stub = $app->{'licenses'}->{$app->{'options'}->{'license'}}->{'header_stub'};
+  if (ref($app->{'filetype_comments'}->{$suffix}) eq '') {
+    $stub =~ s/^(.)/$app->{'filetype_comments'}->{$suffix} $1/msg;
+    $stub = $app->{'filetype_comments'}->{$suffix} . " -----\n" .
+            "$stub\n" .
+            $app->{'filetype_comments'}->{$suffix} . " -----\n";
+  } elsif (ref($app->{'filetype_comments'}->{$suffix}) eq 'ARRAY') {
+    $stub =~ s/^(.)/  $1/msg;
+    $stub = $app->{'filetype_comments'}->{$suffix}[0] .
+            " -----\n$stub\n ----- " .
+            $app->{'filetype_comments'}->{$suffix}[1];
+  } else {
+    # not an option
+  }
+
+  $stub =~ s/\s+$//msg;
+
+  return $stub;
 }
 
 sub setup_licenses {

@@ -10,7 +10,6 @@ sub new {
 sub get_licenses {
   my ($self, $app) = @_;
 
-  print "Plugins\n";
   foreach my $plugin ($self->plugins()) {
     my $stub = $plugin->{'header'};
     $stub =~ s/###DESCRIPTION###/$app->{'options'}->{'about'}/;
